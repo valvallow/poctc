@@ -1,0 +1,42 @@
+#!/usr/local/bin/gosh
+
+(use srfi-1)
+(use file.util)
+(use net.twitter)
+(use gauche.parseopt)
+
+(define (usage)
+  (print "poctc [-c|config -i|id -h|help] <message>")
+  (exit 0))
+
+(define *default-config-path* "~/.poctc")
+
+(define (read-config path)
+  (read-from-string
+   (file->string (expand-path path))))
+
+(define (alist->key-plist alist)
+  (append-map (lambda (pair)
+                (list (make-keyword (car pair))
+                      (cdr pair)))
+              alist))
+
+(define (make-credential config)
+  (apply make <twitter-cred>
+         (alist->key-plist config)))
+
+(define (main args)
+  (let-args (cdr args)
+      ((config "c|config=s" *default-config-path*)
+       (id "i|id=s")
+       (help "h|help" => usage)
+       . rest-args)
+    (let* ((config (read-config (or config *default-config-path*)))
+           (cred (make-credential config))
+           (msg (if (null? rest-args)
+                    (read-line)
+                    (car rest-args)))
+           (responce (twitter-update cred msg)))
+      (print (if id
+                 (format "http://twitter.com/~a/status/~a" id responce)
+                 responce)))))
