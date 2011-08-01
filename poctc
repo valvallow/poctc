@@ -35,8 +35,11 @@
            (cred (make-credential config))
            (msg (if (null? rest-args)
                     (read-line)
-                    (car rest-args)))
-           (responce (twitter-update cred msg)))
-      (print (if id
-                 (format "http://twitter.com/~a/status/~a" id responce)
-                 responce)))))
+                    (car rest-args))))
+      (when (< 140 (string-length msg))
+        (print #`"This tweet has ,(string-length msg) characters, which is too long.")
+        (exit 1))
+      (let ((responce (twitter-update cred msg)))
+        (print (if id
+                   (format "http://twitter.com/~a/status/~a" id responce)
+                   responce))))))
